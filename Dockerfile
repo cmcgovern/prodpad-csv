@@ -24,7 +24,7 @@ COPY --chown=axway-user:axway-group . /app
 RUN npm install --production --no-optional
 
 # check every 5s to ensure this service is healthy
-HEALTHCHECK --interval=5s --start-period=10s --timeout=5s --retries=5 CMD node healthcheck.js
+HEALTHCHECK --interval=5s --start-period=45s --timeout=5s --retries=5 CMD node healthcheck.js
 
 # Starts the service
 CMD ["node", "."]
