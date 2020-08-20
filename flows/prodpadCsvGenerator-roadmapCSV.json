@@ -1,0 +1,287 @@
+{
+	"schemaVersion": "4",
+	"info": {
+		"name": "prodpadCsvGenerator - get /roadmapcsv"
+	},
+	"parameter": {
+		"properties": {
+			"request": {
+				"type": "object",
+				"description": "The HTTP request."
+			},
+			"config": {
+				"type": "object",
+				"description": "The service's configuration"
+			},
+			"env": {
+				"type": "object",
+				"description": "The host OS environment"
+			},
+			"params": {
+				"type": "object",
+				"description": "The parameters from the endpoint."
+			}
+		},
+		"additionalProperties": false,
+		"required": [
+			"request",
+			"config",
+			"env",
+			"params"
+		]
+	},
+	"start": "prodpad-10.1",
+	"nodes": {
+		"http.1": {
+			"type": "nodehandler://axway-flow/http",
+			"name": "Set HTTP Response",
+			"method": "setresponse",
+			"parameters": [
+				{
+					"name": "status",
+					"type": "number",
+					"value": "200",
+					"metaName": "Status",
+					"metaDescription": "The HTTP status code"
+				},
+				{
+					"name": "body",
+					"type": "jsonpath",
+					"value": "$.result",
+					"metaName": "Body",
+					"metaDescription": "The response payload"
+				}
+			],
+			"outputs": {
+				"next": {
+					"context": "$.response",
+					"routes": [],
+					"metaName": "Next"
+				}
+			},
+			"metaMethod": "Set HTTP Response"
+		},
+		"prodpad-10.1": {
+			"type": "nodehandler://@axway/api-builder-plugin-fn-swagger/prodpad-10",
+			"name": "Get All Roadmaps",
+			"method": "GetRoadmaps",
+			"parameters": [],
+			"outputs": {
+				"200": {
+					"routes": [
+						"javascript.1"
+					],
+					"context": "$.roadmaps",
+					"metaName": "200"
+				},
+				"401": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.response",
+					"metaName": "401"
+				},
+				"403": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.response",
+					"metaName": "403"
+				},
+				"error": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.error",
+					"metaName": "Error"
+				},
+				"default": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.response",
+					"metaName": "Default"
+				}
+			},
+			"authorizations": [
+				{
+					"name": "apiKey",
+					"type": "credential",
+					"value": "ProdPad apiKey"
+				}
+			],
+			"metaMethod": "GetRoadmaps"
+		},
+		"javascript.1": {
+			"type": "nodehandler://@axway/api-builder-plugin-fn-javascript/javascript",
+			"name": "Find Roadmap ID",
+			"method": "Execute",
+			"parameters": [
+				{
+					"name": "data",
+					"type": "jsonpath",
+					"value": "$",
+					"metaName": "Data",
+					"metaDescription": "The value to apply as the `data` argument to the JavaScript code. For objects and arrays, `data` is passed by reference."
+				},
+				{
+					"name": "code",
+					"type": "string",
+					"value": "\"let productline_roadmaps = data.roadmaps.data.productline_roadmaps;\\n  let productName = data.params.productName;\\n  let roadmap_id = 9999;\\n  \\n  // Loop through product lines, then products inside each, until you find the product\\n  for (i = 0; i < productline_roadmaps.length; i++) {\\n    const roadmaps = productline_roadmaps[i].roadmaps;\\n    for (j = 0; j < roadmaps.length; j++) {\\n      comparison_string = \\\"Roadmap for \\\" + productName;\\n      if (roadmaps[j].name === comparison_string) {\\n        roadmap_id = roadmaps[j].id;\\n        break;\\n      }\\n    }\\n  }\\n  console.log(roadmap_id);\\n  return roadmap_id;\"",
+					"metaName": "Code",
+					"metaDescription": "A JavaScript function body. Supports `await` and returning promises."
+				}
+			],
+			"outputs": {
+				"next": {
+					"context": "$.roadmap_id",
+					"routes": [
+						"prodpad-10.2"
+					],
+					"metaName": "Next"
+				},
+				"error": {
+					"context": "$.error",
+					"routes": [
+						"http.2"
+					],
+					"metaName": "Error"
+				}
+			},
+			"metaMethod": "Execute"
+		},
+		"http.2": {
+			"type": "nodehandler://axway-flow/http",
+			"name": "Set HTTP Response",
+			"method": "setresponse",
+			"parameters": [
+				{
+					"name": "status",
+					"type": "number",
+					"value": "400",
+					"metaName": "Status",
+					"metaDescription": "The HTTP status code"
+				},
+				{
+					"name": "body",
+					"type": "string",
+					"value": "\"\\\"Error: might be a bad product name, check your input\\\"\"",
+					"metaName": "Body",
+					"metaDescription": "The response payload"
+				}
+			],
+			"outputs": {
+				"next": {
+					"context": "$.response",
+					"routes": [],
+					"metaName": "Next"
+				}
+			},
+			"metaMethod": "Set HTTP Response"
+		},
+		"prodpad-10.2": {
+			"type": "nodehandler://@axway/api-builder-plugin-fn-swagger/prodpad-10",
+			"name": "Get Roadmap by ID",
+			"method": "GetRoadmap",
+			"parameters": [
+				{
+					"name": "id",
+					"type": "jsonpath",
+					"value": "$.roadmap_id",
+					"metaName": "id",
+					"metaDescription": "Numeric ID of the roadmap."
+				}
+			],
+			"outputs": {
+				"200": {
+					"routes": [
+						"javascript.2"
+					],
+					"context": "$.roadmap",
+					"metaName": "200"
+				},
+				"401": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.response",
+					"metaName": "401"
+				},
+				"403": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.response",
+					"metaName": "403"
+				},
+				"404": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.response",
+					"metaName": "404"
+				},
+				"error": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.error",
+					"metaName": "Error"
+				},
+				"default": {
+					"routes": [
+						"http.2"
+					],
+					"context": "$.response",
+					"metaName": "Default"
+				}
+			},
+			"authorizations": [
+				{
+					"name": "apiKey",
+					"type": "credential",
+					"value": "ProdPad apiKey"
+				}
+			],
+			"metaMethod": "GetRoadmap"
+		},
+		"javascript.2": {
+			"type": "nodehandler://@axway/api-builder-plugin-fn-javascript/javascript",
+			"name": "Create CSV rows",
+			"method": "Execute",
+			"parameters": [
+				{
+					"name": "data",
+					"type": "jsonpath",
+					"value": "$.roadmap",
+					"metaName": "Data",
+					"metaDescription": "The value to apply as the `data` argument to the JavaScript code. For objects and arrays, `data` is passed by reference."
+				},
+				{
+					"name": "code",
+					"type": "string",
+					"value": "\"let swimlanes = data.data;\\n  let csv_rows = [];\\n  \\n  header_row= [\\\"swimlane\\\",\\\"title\\\",\\\"description\\\",\\\"public\\\",\\\"position\\\",\\\"status\\\",\\\"state\\\",\\\"tags\\\",\\\"objectives\\\",\\\"tags\\\"];\\n  csv_rows.push(header_row);\\n  \\n  // For each swimlane\\n  for (i = 0; i < swimlanes.length; i++) {\\n    const swimlane_name = swimlanes[i].title;\\n    const cards = swimlanes[i].cards;\\n    \\n    // For each card, we add a new row\\n    for (j = 0; j < cards.length; j++) {\\n      let csv_row = [];\\n      csv_row.push(swimlane_name);\\n      \\n      card = cards[j];\\n      csv_row.push(card.title);\\n      csv_row.push(card.description);\\n      csv_row.push(card.public);\\n      csv_row.push(card.position);\\n      csv_row.push(card.status);\\n      csv_row.push(card.state);\\n      \\n      const tags = card.tags;\\n      let tags_string = \\\"\\\";\\n      for (n=0; n < tags.length; n++) {\\n        if (n == 0) {\\n           tags_string = tags_string + tags[n].tag;\\n        } else {\\n           tags_string = tags_string +  \\\", \\\" + tags[n].tag;\\n        }\\n       \\n      }\\n      csv_row.push(tags_string);\\n      \\n      const objectives = card.objectives;\\n      let objectives_string = \\\"\\\";\\n      for (n=0; n < objectives.length; n++) {\\n        if (n == 0) {\\n          objectives_string = objectives_string + objectives[n].name;\\n        } else {\\n          objectives_string = objectives_string +  \\\", \\\" + objectives[n].name;\\n        }\\n      }\\n      csv_row.push(objectives_string);\\n      \\n      const ideas = card.pipeline.ideas;\\n      let ideas_string = \\\"\\\";\\n      for (n=0; n < ideas.length; n++) {\\n        if (n == 0) {\\n          ideas_string = ideas_string + ideas[n].title;\\n        } else {\\n          ideas_string = ideas_string +  \\\", \\\" + ideas[n].title;\\n        }\\n      }\\n      csv_row.push(ideas_string);\\n      \\n      const owners = card.owners;\\n      let owners_string = \\\"\\\";\\n      for (n=0; n < owners.length; n++) {\\n        if (n == 0) {\\n          owners_string = owners_string + owners[n].display_name;\\n        } else {\\n          owners_string = owners_string +  \\\", \\\" + owners[n].display_name;\\n        }\\n      }\\n      csv_row.push(ideas_string);\\n     \\n      // add row per card\\n      csv_rows.push(csv_row);\\n    }\\n  }\\n  \\n  return csv_rows;\"",
+					"metaName": "Code",
+					"metaDescription": "A JavaScript function body. Supports `await` and returning promises."
+				}
+			],
+			"outputs": {
+				"next": {
+					"context": "$.result",
+					"routes": [
+						"http.1"
+					],
+					"metaName": "Next"
+				},
+				"error": {
+					"context": "$.error",
+					"routes": [
+						"http.2"
+					],
+					"metaName": "Error"
+				}
+			},
+			"metaMethod": "Execute"
+		}
+	}
+}

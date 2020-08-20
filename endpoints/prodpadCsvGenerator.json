@@ -1,0 +1,49 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Prodpad CSV generator",
+    "version": "1.0.0",
+    "title": "Prodpad CSV generator",
+    "contact": {
+      "email": "cmcgovern@axway.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "paths": {
+    "/roadmapcsv": {
+      "get": {
+        "summary": "get CSV for product roadmap",
+        "description": "By passing in the product name, you can get a CSV of the roadmap details\n",
+        "operationId": "roadmapCSV",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "query",
+            "description": "Name of the product whose roadmap you need",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file with roadmap info",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "description": "bad input parameter"
+          }
+        },
+        "x-flow": "prodpadCsvGenerator-roadmapCSV"
+      }
+    }
+  },
+  "definitions": {}
+}
